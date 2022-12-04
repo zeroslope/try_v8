@@ -4,7 +4,7 @@
 
 use v8::{CreateParams, HandleScope, Isolate, OwnedIsolate, Script};
 
-use crate::state::JsRuntimeState;
+use crate::{extension::JsExtension, state::JsRuntimeState};
 
 type LocalValue<'s> = v8::Local<'s, v8::Value>;
 
@@ -49,6 +49,7 @@ impl JsRuntime {
     ) -> Result<serde_json::Value, serde_json::Value> {
         let state = JsRuntimeState::get_context(&mut self.isolate);
         let handle_scope = &mut HandleScope::with_context(&mut self.isolate, state);
+        JsExtension::install(handle_scope);
         match execute_sciprt(handle_scope, code) {
             Ok(v) => Ok(serde_v8::from_v8(handle_scope, v).unwrap()),
             Err(e) => Err(serde_v8::from_v8(handle_scope, e).unwrap()),
@@ -60,7 +61,7 @@ impl JsRuntime {
     }
 }
 
-fn execute_sciprt<'s>(
+pub(crate) fn execute_sciprt<'s>(
     handle_scope: &mut HandleScope<'s>,
     code: impl AsRef<str>,
 ) -> Result<LocalValue<'s>, LocalValue<'s>> {
