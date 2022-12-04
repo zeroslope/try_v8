@@ -2,6 +2,7 @@
 // new runtime(isolate) with config
 // run code
 
+use once_cell::sync::OnceCell;
 use v8::{CreateParams, HandleScope, Isolate, OwnedIsolate, Script};
 
 use crate::{extension::JsExtension, state::JsRuntimeState};
@@ -27,9 +28,12 @@ impl JsRuntimeParams {
 
 impl JsRuntime {
     pub fn init() {
-        let platform = v8::new_default_platform(0, false).make_shared();
-        v8::V8::initialize_platform(platform);
-        v8::V8::initialize();
+        static INSTANCE: OnceCell<()> = OnceCell::new();
+        INSTANCE.get_or_init(|| {
+            let platform = v8::new_default_platform(0, false).make_shared();
+            v8::V8::initialize_platform(platform);
+            v8::V8::initialize();
+        });
     }
 
     fn init_isolate(mut isolate: OwnedIsolate) -> Self {
